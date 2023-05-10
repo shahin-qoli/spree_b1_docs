@@ -6,13 +6,18 @@ module Spree
     def make_request_b1
       url = api_address+"/CreateOrder"
       payload = prepare_request_body
+
+      p "here to show the boYYYYYYYYYYYYYi"
+      p payload
       headers = {
         "Content-Type" => "application/json"
       }
       response = HTTParty.post(url, headers: headers, body: payload)
       response_object = JSON.parse(response.body)
+      puts response_object
       self.response = response_object
       self.request = payload
+      self.save
       process_response response_object
     end
 
@@ -29,7 +34,7 @@ module Spree
             documenting_result[:incoming_payment_doc_entry], documenting_result[:incoming_payment_doc_num] = doc["docEntry"], doc["docNum"]
           end
         end
-      elsif response_object["action"] == -1 && response_object["status"] == 4 && !response_object["error"].empty?
+      elsif response_object["action"] == 2 && response_object["status"] == 1 && !response_object["error"].empty?
         result = response_object["result"]
         result.each do |doc|
           case doc["docType"]
@@ -39,20 +44,26 @@ module Spree
             documenting_result[:incoming_payment_doc_entry], documenting_result[:incoming_payment_doc_num] = doc["docEntry"], doc["docNum"]
           end
         end
-      finalize_the_process documenting_result  
+        p "documenting_resultdocumenting_resultdocumenting_resultdocumenting_result"
+        puts documenting_result        
       end
+      p documenting_result
+      finalize_the_process documenting_result
     end
     def finalize_the_process documenting_result
       self.order.b1_doc_entry = documenting_result[:so_doc_entry]
       self.order.b1_doc_num = documenting_result[:so_doc_num]
       self.order.b1_documented = true
-      self.order.payments.completed.last.b1_doc_entry = documenting_result[:incoming_payment_doc_entry]
-      self.order.payments.completed.last.b1_doc_num = documenting_result[:incoming_payment_doc_num]
-      self.order.payments.completed.last.b1_documented = true
+      payment = self.order.payments.completed.last
+      payment.b1_doc_entry = documenting_result[:incoming_payment_doc_entry]
+      payment.b1_doc_num = documenting_result[:incoming_payment_doc_num]
+      payment.b1_documented = true
       self.order.save!
-      self.order.payments.completed.last.save!
+      puts "putting the payment DUUUUUUUUUUUUUUR"
+      p payment
+      payment.save!
       self.is_success = true
-      save!
+      self.save!
     end
     def prepare_request_body
       marketing_lines = prepare_marketing_lines_body
@@ -67,7 +78,7 @@ module Spree
               "IncomingLines": [
                   {
                       "Type": 2,
-                      "Value": self.order.payments.completed.last.amount,
+                      "Value": self.order.payments.completed.last.amount.to_f,
                       "DueDateTime": self.order.payments.completed.last.created_at,
                       "Reference": self.order.payments.completed.last.number
                   }
@@ -77,7 +88,7 @@ module Spree
               },
               "ExpenseCost":[{
                   "ExpenseCode":1,
-                  "GrossCost": delivery_cost
+                  "GrossCost": delivery_cost.to_f
               }]
           },
           "SettleType": 16,
@@ -99,6 +110,7 @@ module Spree
         "Content-Type" => "application/json"
       }
       response = HTTParty.post(url, headers: headers, body: payload)
+      response.parsed_response
     end
     def prepare_marketing_lines_body
       ml = []
@@ -110,10 +122,11 @@ module Spree
         line = {
             "ItemCode": item.variant.sku,
             "ItemQty": item.quantity,
-            "Price": price
+            "Price": price.to_f
               }
         ml.push(line)
       end
+      ml
     end
     def create_or_get_user_b1_code
       if self.order.user.b1_code.nil?

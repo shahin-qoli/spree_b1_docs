@@ -8,5 +8,5 @@ gem 'spree_auth_devise', github: 'spree/spree_auth_devise', branch: 'main'
 gem 'rails-controller-testing'
 gem 'byebug'
 gem 'deface'
-
+gem 'httparty'
 gemspec
