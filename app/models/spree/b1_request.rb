@@ -6,15 +6,11 @@ module Spree
     def make_request_b1
       url = api_address+"/CreateOrder"
       payload = prepare_request_body
-
-      p "here to show the boYYYYYYYYYYYYYi"
-      p payload
       headers = {
         "Content-Type" => "application/json"
       }
       response = HTTParty.post(url, headers: headers, body: payload)
       response_object = JSON.parse(response.body)
-      puts response_object
       self.response = response_object
       self.request = payload
       self.save
@@ -47,7 +43,6 @@ module Spree
         p "documenting_resultdocumenting_resultdocumenting_resultdocumenting_result"
         puts documenting_result        
       end
-      p documenting_result
       finalize_the_process documenting_result
     end
     def finalize_the_process documenting_result
@@ -59,8 +54,6 @@ module Spree
       payment.b1_doc_num = documenting_result[:incoming_payment_doc_num]
       payment.b1_documented = true
       self.order.save!
-      puts "putting the payment DUUUUUUUUUUUUUUR"
-      p payment
       payment.save!
       self.is_success = true
       self.save!

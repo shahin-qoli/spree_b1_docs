@@ -4,8 +4,6 @@ module Spree
 			module Storefront
 				class B1RequestsController < ::Spree::Api::V2::ResourceController
 					before_action :check_admin_role
-
-
 					def by_order_number
 						order = Spree::Order.find_by_number(params["order_number"])
 						payment = order.payments.completed.last
