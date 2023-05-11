@@ -60,7 +60,7 @@ module Spree
 								"order_number" => order.number }
 						else		
 							order.update(need_document: false)
-							render :json => {"error" => "", "result" => "This order won't proccess"
+							render :json => {"error" => "", "result" => "This order won't proccess",
 								"order_number" => order.number}
 						end
 					end
