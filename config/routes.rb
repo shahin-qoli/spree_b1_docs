@@ -6,6 +6,7 @@ Spree::Core::Engine.add_routes do
           collection do
             get 'by_order_number'
             get 'by_all'
+            get 'change_need_documenting'
           end
         end
       end
