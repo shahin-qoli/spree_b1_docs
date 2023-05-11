@@ -7,7 +7,7 @@ module Spree
 					def by_order_number
 						order = Spree::Order.find_by_number(params["order_number"])
 						payment = order.payments.completed.last
-						if order.b1_documented || payment.b1_documented
+						if order.b1_documented || payment.b1_documented 
 							payment = order.payments.completed.last
 							render :json => {"error" => "This order is proccessed already",
 								"order_number" => order.number,
@@ -16,6 +16,8 @@ module Spree
 								"incoming_payment_b1_doc_number" => payment.b1_doc_num,
 								"incoming_payment_b1_doc_entry" => payment.b1_doc_entry
 							}
+						elsif !order.need_document
+							render :json => { "error" => "This order doesn't need documenting",  "order_number" => order.number}
 						else 
 							request = order.b1_requests.create
 							request.make_request_b1
@@ -51,7 +53,17 @@ module Spree
 								"results" => results}
 						end
 					end
-
+					def change_need_documenting
+						order = Spree::Order.find_by_number(params["order_number"])
+						if order.b1_documented || payment.b1_documented 
+							render :json => {"error" => "This order is proccessed already",
+								"order_number" => order.number }
+						else		
+							order.update(need_document: false)
+							render :json => {"error" => "", "result" => "This order won't proccess"
+								"order_number" => order.number}
+						end
+					end
 					private
 					def check_admin_role
 						user = spree_current_user
