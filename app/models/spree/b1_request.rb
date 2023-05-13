@@ -108,7 +108,7 @@ module Spree
     def prepare_marketing_lines_body
       ml = []
       amounts = self.order.adjustments.pluck(:amount)
-      discount_amount = amounts.empty? ? 0 : amounts
+      discount_amount = amounts.empty? ? 0 : amounts.first
       discount_percent = discount_amount.to_f / self.order.item_total.to_f 
       order.line_items.each do |item|
         price = item.price == 1 ? item.price : item.price * ( 1 - discount_percent)
