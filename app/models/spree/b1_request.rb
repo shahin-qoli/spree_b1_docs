@@ -14,8 +14,21 @@ module Spree
       self.request = payload
       self.save
       process_response response_object
+      self.is_success
     end
-
+    def make_request_invoice
+      url = api_address+"/CreateMarketingDocument"
+      payload = prepare_request_body_invoice
+      headers = {
+        "Content-Type" => "application/json"
+      }
+      response = HTTParty.post(url, headers: headers, body: payload)
+      response_object = JSON.parse(response.body)
+      self.response = response_object
+      self.request = payload
+      self.save
+      process_response response_object      
+    end
     def make_request_b1
       url = api_address+"/CreateOrder"
       payload = prepare_request_body
