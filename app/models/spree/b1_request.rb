@@ -2,6 +2,19 @@ module Spree
   class B1Request < Spree::Base
     belongs_to :order
 
+    def make_request_delivery
+      url = api_address+"/CreateDelivery"
+      payload = prepare_request_body_delivery
+      headers = {
+        "Content-Type" => "application/json"
+      }
+      response = HTTParty.post(url, headers: headers, body: payload)
+      response_object = JSON.parse(response.body)
+      self.response = response_object
+      self.request = payload
+      self.save
+      process_response response_object
+    end
 
     def make_request_b1
       url = api_address+"/CreateOrder"
@@ -28,6 +41,10 @@ module Spree
             documenting_result[:so_doc_entry], documenting_result[:so_doc_num] = doc["docEntry"], doc["docNum"]
           when 24
             documenting_result[:incoming_payment_doc_entry], documenting_result[:incoming_payment_doc_num] = doc["docEntry"], doc["docNum"]
+          when 15
+            documenting_result[:delivery_doc_entry], documenting_result[:delivery_doc_num] = doc["docEntry"], doc["docNum"]
+          when 13
+            documenting_result[:invoice_doc_entry], documenting_result[:invoice_doc_num] = doc["docEntry"], doc["docNum"]
           end
         end
       elsif response_object["action"] == 2 && response_object["status"] == 1 && !response_object["error"].empty?
@@ -38,11 +55,18 @@ module Spree
             documenting_result[:so_doc_entry], documenting_result[:so_doc_num] = doc["docEntry"], doc["docNum"]
           when 24
             documenting_result[:incoming_payment_doc_entry], documenting_result[:incoming_payment_doc_num] = doc["docEntry"], doc["docNum"]
+          when 15
+            documenting_result[:delivery_doc_entry], documenting_result[:delivery_doc_num] = doc["docEntry"], doc["docNum"]
+          when 13
+            documenting_result[:invoice_doc_entry], documenting_result[:invoice_doc_num] = doc["docEntry"], doc["docNum"]
           end
         end
         p "documenting_resultdocumenting_resultdocumenting_resultdocumenting_result"
         puts documenting_result        
-      end
+      elsif response_object["error"] == "Authentication failed.Please Login then try again" || !response_object["isApprovedResponse"]
+        self.update(is_success: false)
+        return
+      end      
       finalize_the_process documenting_result
     end
     def finalize_the_process documenting_result
@@ -53,10 +77,100 @@ module Spree
       payment.b1_doc_entry = documenting_result[:incoming_payment_doc_entry]
       payment.b1_doc_num = documenting_result[:incoming_payment_doc_num]
       payment.b1_documented = true
+      self.order.delivery_b1_doc_entry = documenting_result[:delivery_doc_entry]
+      self.order.delivery_b1_doc_num = documenting_result[:delivery_doc_num]
+      self.order.invoice_b1_doc_entry = documenting_result[:invoice_doc_entry]
+      self.order.invoice_b1_doc_num = documenting_result[:invoice_doc_num]
       self.order.save!
       payment.save!
       self.is_success = true
       self.save!
+    end
+    def prepare_request_body_invoice
+      marketing_lines = prepare_marketing_lines_body_invoice
+      delivery_cost = self.order.has_free_shipping? ? 0 : self.order.shipment_total
+      doc_time = self.order.payments.completed.last.created_at
+      {
+      "token": token,
+      "doc": {
+          "docsource": 0,
+          "doctype": 13,
+          "DocSeries": 221,
+          "cardcode": create_or_get_user_b1_code,
+          "marketingapprelatedid": "MiarzeInvoice#{self.order.id}",
+          "doctime": doc_time,
+          "WhsCode": "329",
+          "marketinglines": marketing_lines,
+          "ExpenseCost": [
+              {
+                  "ExpenseCode": 1,
+                  "GrossCost": delivery_cost.to_f
+              }
+          ],
+          "marketingdetails": {
+              "isRelated": true,
+              "BaseDoc": {
+                  "DocEntry": self.order.delivery_b1_doc_entry,
+                  "DocType": 15
+              },
+              "paymenttime": 5
+          }
+      }
+      }.to_json
+    end 
+    def prepare_marketing_lines_body_invoice
+      ml = []
+      order.line_items.each do |item|
+        line = {
+            "itemcode": item.variant.sku,
+            "itemqty": item.quantity,
+            "AccountNo": "411108"
+              }
+        ml.push(line)
+      end
+      ml
+    end  
+    def prepare_request_body_delivery
+      marketing_lines = prepare_marketing_lines_body_delivery
+      delivery_cost = self.order.has_free_shipping? ? 0 : self.order.shipment_total
+      doc_time = self.order.payments.completed.last.created_at
+      {
+          "token": token,
+          "Doc": {
+              "DocType": 15,
+              "DocSeries": 219,            
+              "CardCode": create_or_get_user_b1_code,
+              "doctime" : doc_time,
+              "WhsCode": "329",
+              "marketingAppRelatedID": "MiarzeDelivery#{self.order.id}",
+              "marketingDetails": {
+                "isRelated": true,
+                "BaseDoc": {
+                    "DocEntry": self.order.b1_doc_entry,
+                    "DocType": 17
+                           },
+                    "paymenttime": 5
+                                },
+              "MarketingLines": marketing_lines,
+              "ExpenseCost": [
+                  {
+                      "ExpenseCode": 1,
+                      "GrossCost": delivery_cost.to_f
+                  }
+              ]
+            }
+      }.to_json      
+    end
+    def prepare_marketing_lines_body_delivery
+      ml = []
+      order.line_items.each do |item|
+        line = {
+            "ItemCode": item.variant.sku,
+            "ItemQty": item.quantity,
+              }
+        ml.push(line)
+      end
+      ml
     end
     def prepare_request_body
       marketing_lines = prepare_marketing_lines_body
