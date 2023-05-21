@@ -55,7 +55,7 @@ module Spree
 					end
 					def change_need_documenting
 						order = Spree::Order.find_by_number(params["order_number"])
-						if order.b1_documented || payment.b1_documented 
+						if order.b1_documented 
 							render :json => {"error" => "This order is proccessed already",
 								"order_number" => order.number }
 						else		
