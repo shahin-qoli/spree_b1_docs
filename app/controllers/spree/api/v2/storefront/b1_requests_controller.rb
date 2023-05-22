@@ -38,7 +38,7 @@ module Spree
 						else
 							results = []
 							orders.each do |order|
-								request = order.b1_request.create
+								request = order.b1_requests.create
 								request.make_request_b1
 								result = {"error" => "",
 								"order_number" => order.number,
