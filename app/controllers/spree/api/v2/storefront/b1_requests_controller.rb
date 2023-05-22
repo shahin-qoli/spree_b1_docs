@@ -32,7 +32,7 @@ module Spree
 						end
 					end
 					def by_all
-						orders = Spree::Order.where.not(b1_documented: true)
+						orders = Spree::Order.complete.where.not(b1_documented: true, need_document: false)
 						if orders.empty
 							render	json: {"error" => "All orders are proccessed already"}
 						else
