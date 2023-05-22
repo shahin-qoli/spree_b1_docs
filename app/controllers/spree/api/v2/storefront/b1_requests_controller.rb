@@ -40,6 +40,7 @@ module Spree
 							orders.each do |order|
 								request = order.b1_requests.create
 								request.make_request_b1
+								payment = order.payments.completed.last
 								result = {"error" => "",
 								"order_number" => order.number,
 								"so_b1_doc_number" => order.b1_doc_num,
