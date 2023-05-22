@@ -71,7 +71,7 @@ module Spree
               "marketingapprelatedid": "MiarzeOrder#{self.order.id}",
               "PaymentAppRelatedId": "MiarzePayment#{self.order.payments.completed.last.id}",
               "MarketingLines": marketing_lines,
-              "DocTime": self.order.completed_at
+              "DocTime": self.order.completed_at,
               "IncomingLines": [
                   {
                       "Type": 2,
