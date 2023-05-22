@@ -18,6 +18,9 @@ module Spree
     end
 
     private
+    def get_token
+      @token ||= request_token
+    end
     def process_response response_object
       documenting_result = ActiveSupport::HashWithIndifferentAccess.new
       if response_object["action"] == -1 && response_object["status"] == 4 && response_object["error"].empty?
@@ -62,7 +65,7 @@ module Spree
       marketing_lines = prepare_marketing_lines_body
       delivery_cost = self.order.has_free_shipping? ? 0 : self.order.shipment_total
       {
-          "token": token,
+          "token": get_token,
           "marketdoc": {
               "CardCode": create_or_get_user_b1_code,
               "marketingapprelatedid": "MiarzeOrder#{self.order.id}",
@@ -93,7 +96,7 @@ module Spree
     def free_shipping?
       self.order.has_free_shipping?
     end
-    def token
+    def request_token
       url = api_address+"/Login"
       payload = {
       "Username"=> "Miarze",
@@ -152,7 +155,7 @@ module Spree
       long = "#{user.addresses.last.lng}"
       zipcode = user.addresses.last.zipcode
       {
-        "token"=> token,
+        "token"=> get_token,
           "customer" => {
               "cardname" => cardname,
               "bpapprelatedid" => bpapprelatedid ,
