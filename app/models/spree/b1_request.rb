@@ -153,7 +153,7 @@ module Spree
               "DocType": 15,
               "DocSeries": 219,            
               "CardCode": create_or_get_user_b1_code,
-              "doctime" : doc_time,
+              "doctime": doc_time,
               "WhsCode": "329",
               "marketingAppRelatedID": "MiarzeDelivery#{self.order.id}",
               "marketingDetails": {
