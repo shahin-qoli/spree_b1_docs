@@ -7,6 +7,7 @@ Spree::Core::Engine.add_routes do
             get 'by_order_number'
             get 'by_all'
             get 'change_need_documenting'
+            get 'revert_so_incomingpayment'
           end
         end
       end

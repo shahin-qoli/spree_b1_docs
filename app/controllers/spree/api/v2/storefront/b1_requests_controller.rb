@@ -6,7 +6,7 @@ module Spree
 					before_action :check_admin_role
 					def by_order_number
 						order = Spree::Order.find_by_number(params["order_number"])
-						payment = order.payments.completed.last
+						payment = order.payments.&completed.last
 						if order.b1_documented || payment.b1_documented 
 							payment = order.payments.completed.last
 							render :json => {"error" => "This order is proccessed already",
@@ -62,6 +62,19 @@ module Spree
 						else		
 							order.update(need_document: false)
 							render :json => {"error" => "", "result" => "This order won't proccess",
+								"order_number" => order.number}
+						end
+					end
+					def revert_so_incomingpayment
+						order = Spree::Order.find_by_number(params["order_number"])
+						payment = order.payments.&completed.last
+						if (order.b1_documented || payment.b1_documented) && order.need_document
+							order.update(b1_documented: false)
+							payment.update(b1_documented: false)
+							return json: {"result" => "This order is ready to create document again",
+								"order_number" => order.number}
+						else
+							return json: {"error" => "this order isn't documented or is marked as doesn't need documenting",
 								"order_number" => order.number}
 						end
 					end
