@@ -131,10 +131,10 @@ module Spree
 						if (order.b1_documented || payment.b1_documented) && order.need_document
 							order.update(b1_documented: false)
 							payment.update(b1_documented: false)
-							return json: {"result" => "This order is ready to create document again",
+							return :json => {"result" => "This order is ready to create document again",
 								"order_number" => order.number}
 						else
-							return json: {"error" => "this order isn't documented or is marked as doesn't need documenting",
+							return :json => {"error" => "this order isn't documented or is marked as doesn't need documenting",
 								"order_number" => order.number}
 						end
 					end
