@@ -7,8 +7,12 @@ Spree::Core::Engine.add_routes do
             get 'by_order_number'
             get 'by_all'
             get 'change_need_documenting'
+
+            get 'revert_so_incomingpayment'
+
             get 'deliver_and_invoice_by_order_number'
             get 'deliver_and_invoice_by_all'
+
           end
         end
       end
